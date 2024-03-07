@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 
 import './index.css'
-import Shader from './Shader.jsx'
+import { Particles } from './Particles.jsx'
 
 
 function Box(props) {
@@ -40,11 +40,9 @@ function App() {
       position: [0, 0, 5],
       fov: 40 }}  
     >
-      <ambientLight intensity={Math.PI / 2} />
       <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} decay={0} intensity={Math.PI} />
-      <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
-      <Box position={[-1.2, 0, 0]} />
-      <Box position={[1.2, 0, 0]} />
+      <Box position={[0, 0, 0]} />
+      <Particles position = {[1.5, 0, 0]} />
       <OrbitControls />
     </Canvas>
   </>
