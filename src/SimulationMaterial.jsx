@@ -13,7 +13,7 @@ const SimulationMaterial = shaderMaterial(
     varying vec2 vUv;
 
     void main(){
-        vRef = ref;
+        vUv = uv ;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         gl_PointSize = 5.0;
     }
@@ -32,7 +32,7 @@ const SimulationMaterial = shaderMaterial(
 
         position += velocity * 0.01; 
 
-        gl_FragColor.rgba = vec4(position, 0., 1.0);
+        gl_FragColor.rgba = vec4(position, 1.0);
     }
     `,
 )

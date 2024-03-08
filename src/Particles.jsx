@@ -1,3 +1,8 @@
+import { createPortal, useFrame } from '@react-three/fiber'
+import { useRef } from 'react'
+import { Scene, OrthographicCamera, FloatType } from 'three'
+import { useFBO } from '@react-three/drei'
+
 import './RenderMaterial'
 import './SimulationMaterial'
 import { getDataTexture } from './getDataTexture.jsx'
@@ -26,7 +31,45 @@ for(let i = 0; i < SIZE; i++){
 }
 
 export function Particles(){
+
+    const scene = new Scene()
+    const camera = new OrthographicCamera(-1, 1, 1, -1, -1, 1)
+
+    let target0 = useFBO(SIZE, SIZE,{
+        type : FloatType,
+    })
+    let target1 = useFBO(SIZE, SIZE,{
+        type : FloatType,
+    })
+    const simMat = useRef()
+    const renderMat = useRef()
+
+    useFrame(({gl})=>{
+        gl.setRenderTarget(target0)
+        gl.render(scene, camera)
+        gl.setRenderTarget(null)
+
+        renderMat.current.uniforms.uPosition.value = target1.texture
+        simMat.current.uniforms.uPosition.value = target0.texture
+
+        let temp = target0
+        target0 = target1
+        target1 = temp
+    })
+
     return(
+    <>
+    {createPortal(
+        <mesh>
+            <planeGeometry args={[2, 2]} />
+            <simulationMaterial 
+            ref = {simMat}
+            uPosition = {getDataTexture(SIZE)}
+            uVelocity = {getDataTexture(SIZE)}
+            />
+        </mesh>,
+        scene
+    )}
         <points
         position = {[1.5, 0, 0]}
         >
@@ -46,8 +89,9 @@ export function Particles(){
             </bufferGeometry>
 
             <renderMaterial 
-            uPosition = {getDataTexture(SIZE)}
+            ref = {renderMat}
             />
         </points>
+    </>
     )
 }
