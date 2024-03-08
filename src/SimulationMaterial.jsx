@@ -1,10 +1,12 @@
 import { shaderMaterial } from "@react-three/drei"
 import { extend } from "@react-three/fiber"
+import { Vector3 } from 'three'
 
 const SimulationMaterial = shaderMaterial(
     {
         uPosition : null,
-        uVelocity : null,
+        uOriginalPosition : null,
+        uMouse : new Vector3(-10., -10., 10.)
     },
     // Vertex Shader
     `
@@ -21,18 +23,40 @@ const SimulationMaterial = shaderMaterial(
     // Fragment Shader
     `
     uniform sampler2D uPosition;
-    uniform sampler2D uVelocity;
+    uniform sampler2D uOriginalPosition;
+    uniform vec3 uMouse;
 
     varying vec2 vUv;
     
     void main(){
 
-        vec3 position = texture2D(uPosition, vUv).rgb;
-        vec3 velocity = texture2D(uVelocity, vUv).rgb;
+    vec2 position = texture2D(uPosition, vUv ).xy;
+    vec2 original = texture2D(uOriginalPosition, vUv ).xy;
+    vec2 velocity = texture2D( uPosition, vUv ).zw;
 
-        position += velocity * 0.01; 
+    velocity *= .99;
 
-        gl_FragColor.rgba = vec4(position, 1.0);
+    // Particle attraction to shape force
+
+    vec2 direction = normalize( original - position );
+    float dist = length( original - position );
+    if( dist > 0.01 ) {
+        velocity += direction * 0.0001;
+    }
+
+    // Mouse repel force
+
+    float mouseDistance = distance( position, uMouse.xy );
+    float maxDistance = 0.3;
+    if( mouseDistance < maxDistance ){
+        vec2 direction = normalize( position - uMouse.xy );
+        velocity += direction * ( 1.0 - mouseDistance / maxDistance ) * 0.01;
+    }
+
+    position.xy += velocity;
+    
+    gl_FragColor = vec4(position, velocity);
+
     }
     `,
 )
