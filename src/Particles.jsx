@@ -61,7 +61,7 @@ export function Particles(){
     const [matcap1, matcap2, matcap3, matcap4] = useTexture(['./textures/matcap01.png', './textures/matcap02.jpg', './textures/matcap03.jpg', './textures/matcap07.jpg'])
 
     const simMat = useRef()
-    const renderMat = useRef()
+
     const followMouseRef = useRef()
     const iRef = useRef()
 
@@ -145,8 +145,6 @@ export function Particles(){
 
     useFrame(({gl})=>{
         gpuCompute.compute()
-
-         renderMat.current.uniforms.uPosition.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture
         
          iRef.current.material.uniforms.uPosition.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture
 
@@ -166,35 +164,12 @@ export function Particles(){
         color={0x5500bb}
         />
     </mesh>
-        <points
-        position = {[0, 0, 0]}
-        >
-            <bufferGeometry>
-                <bufferAttribute
-                attach = "attributes-position"
-                count = {particles.length / 3}
-                array = {particles}
-                itemSize = {3}
-                />
-                <bufferAttribute
-                attach = "attributes-ref"
-                count = {ref.length / 3}
-                array = {ref}
-                itemSize = {2}
-                />
-            </bufferGeometry>
 
-            <renderMaterial 
-            ref = {renderMat}
-            transparent = {true}
-            blending = {AdditiveBlending}
-            />
-        </points>
     <instancedMesh
         ref= {iRef}
         args = {[null, null, SIZE*SIZE]}
         >
-        <boxGeometry args={[0.01, 0.07, 0.01]} />
+        <capsuleGeometry args={[0.01, 0.07, 5, 10 ]} />
         <CustomShaderMaterial
           baseMaterial={MeshMatcapMaterial}
           size={0.01}
@@ -202,7 +177,7 @@ export function Particles(){
           fragmentShader={patchShaders(shader.fragment)}
           uniforms={uniforms}
           transparent
-          matcap={matcap3}
+          matcap={matcap4}
         />
     </instancedMesh>
 </>
