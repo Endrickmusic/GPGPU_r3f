@@ -16,6 +16,10 @@ function App() {
       position: [0, 0, 9],
       fov: 40 }}  
     >
+      <ambientLight 
+      intensity = {0.5}
+      />
+      <directionalLight />
       <Particles />
       <OrbitControls />
     </Canvas>

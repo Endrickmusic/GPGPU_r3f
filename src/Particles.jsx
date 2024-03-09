@@ -1,8 +1,12 @@
 import { createPortal, useFrame, useThree } from '@react-three/fiber'
-import { useRef } from 'react'
-import { Scene, OrthographicCamera, FloatType, NearestFilter, AdditiveBlending, Vector3 } from 'three'
-import { useFBO } from '@react-three/drei'
+import { useRef, useMemo, useEffect } from 'react'
+import { Scene, OrthographicCamera, FloatType, NearestFilter, 
+        AdditiveBlending, Vector3, MeshPhysicalMaterial, 
+        InstancedBufferAttribute, MeshMatcapMaterial } from 'three'
+import { useFBO, useTexture } from '@react-three/drei'
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js'
+import CustomShaderMaterial from 'three-custom-shader-material'
+import { patchShaders } from 'gl-noise/build/glNoise.m'
 
 import './RenderMaterial'
 import './SimulationMaterial'
@@ -11,13 +15,55 @@ import simFragmentPosition from './shader/simFragmentPosition.js'
 import simFragmentVelocity from './shader/simFragmentVelocity.js'
 
 
+const shader = {
+    vertex: /* glsl */ `
+      
+      attribute vec2 ref;
+
+      uniform float uTime;
+      uniform sampler2D uPosition;
+      uniform sampler2D uVelocity;
+
+      vec3 rotate3D(vec3 v, vec3 vel){
+        vec3 newPos = v;
+        vec3 up = vec3(0, 1, 0);
+        vec3 axis = normalize(cross(up, vel));
+        float angle = acos(dot(up, normalize(vel)));
+        newPos = newPos * cos (angle) + cross(axis, newPos) * sin(angle) + axis * dot(axis, newPos) * (1. - cos(angle));
+        return newPos;
+    }
+
+      vec3 displace(vec3 point, vec3 vel) {
+        vec3 pos = texture2D(uPosition, ref).rgb;
+        vec3 copyPoint = rotate3D(point, vel);
+        vec3 instancePosition = (instanceMatrix * vec4(copyPoint, 1.)).xyz;
+        return instancePosition + pos;
+      }  
+  
+      void main() {
+        vec3 vel = texture2D(uVelocity, ref).rgb;
+        vec3 p = displace(position, vel);
+        csm_PositionRaw = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.);
+        csm_Normal = rotate3D( normal, vel );
+      }
+      `,
+    fragment: /* glsl */ `
+      void main() {
+        csm_DiffuseColor = vec4(1.);
+      }
+      `,
+  }
+
 export function Particles(){
 
-    const SIZE = 128
+    const SIZE = 64
+
+    const [matcap1, matcap2, matcap3, matcap4] = useTexture(['./textures/matcap01.png', './textures/matcap02.jpg', './textures/matcap03.jpg', './textures/matcap07.jpg'])
 
     const simMat = useRef()
     const renderMat = useRef()
     const followMouseRef = useRef()
+    const iRef = useRef()
 
     const { gl, viewport } = useThree()
 
@@ -65,6 +111,31 @@ export function Particles(){
  
     const originalPosition = getDataTexture(SIZE)
 
+    const uniforms = useMemo(
+        () => ({
+          uPosition: {
+            value: null,
+          },
+          uVelocity: {
+            value: null,
+          },
+        }),
+        []
+      )
+
+    useEffect(() => {
+        const ref = new Float32Array(SIZE * SIZE * 2);
+        for(let i = 0; i < SIZE; i++){
+            for(let j = 0; j < SIZE; j++){
+                const index = i * SIZE + j
+    
+                ref[ index * 2 + 0 ] = i / (SIZE - 1)
+                ref[ index * 2 + 1 ] = j / (SIZE - 1)
+            }
+        }
+        iRef.current.geometry.setAttribute('ref', new InstancedBufferAttribute(ref, 2))
+    }, [])
+
     useFrame(({mouse}) => {
         followMouseRef.current.position.x = mouse.x * viewport.width / 2
         followMouseRef.current.position.y = mouse.y * viewport.height / 2
@@ -76,16 +147,10 @@ export function Particles(){
         gpuCompute.compute()
 
          renderMat.current.uniforms.uPosition.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture
-        // gl.setRenderTarget(target0)
-        // gl.render(scene, camera)
-        // gl.setRenderTarget(null)
+        
+         iRef.current.material.uniforms.uPosition.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture
 
-        // renderMat.current.uniforms.uPosition.value = target1.texture
-        // simMat.current.uniforms.uPosition.value = target0.texture
-
-        // let temp = target0
-        // target0 = target1
-        // target1 = temp
+         iRef.current.material.uniforms.uVelocity.value = gpuCompute.getCurrentRenderTarget(velocityVariable).texture
     })
 
     return(
@@ -125,6 +190,21 @@ export function Particles(){
             blending = {AdditiveBlending}
             />
         </points>
-    </>
-    )
+    <instancedMesh
+        ref= {iRef}
+        args = {[null, null, SIZE*SIZE]}
+        >
+        <boxGeometry args={[0.01, 0.07, 0.01]} />
+        <CustomShaderMaterial
+          baseMaterial={MeshMatcapMaterial}
+          size={0.01}
+          vertexShader={patchShaders(shader.vertex)}
+          fragmentShader={patchShaders(shader.fragment)}
+          uniforms={uniforms}
+          transparent
+          matcap={matcap3}
+        />
+    </instancedMesh>
+</>
+)
 }
