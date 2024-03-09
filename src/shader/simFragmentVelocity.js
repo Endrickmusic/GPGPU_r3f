@@ -171,10 +171,10 @@ velocity *= .97;
 vec3 direction = normalize( original - position );
 float dist = length( original - position );
 if( dist > 0.01 ) {
-    velocity += direction * 0.0001;
+    velocity += direction * 0.00001;
 }
 
-velocity += curlNoise( position ) * 0.0002;
+velocity += curlNoise( position ) * 0.00006;
 
 // Mouse repel force
 

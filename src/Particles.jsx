@@ -56,7 +56,7 @@ const shader = {
 
 export function Particles(){
 
-    const SIZE = 64
+    const SIZE = 256
 
     const [matcap1, matcap2, matcap3, matcap4] = useTexture(['./textures/matcap01.png', './textures/matcap02.jpg', './textures/matcap03.jpg', './textures/matcap07.jpg'])
 

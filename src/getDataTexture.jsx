@@ -58,7 +58,7 @@ export function getSphereTexture(size){
     
                     data[ 4 * index + 0 ] = x
                     data[ 4 * index + 1 ] = y
-                    data[ 4 * index + 2 ] = 0
+                    data[ 4 * index + 2 ] = z
                     data[ 4 * index + 3 ] = 0
                    }
             }
