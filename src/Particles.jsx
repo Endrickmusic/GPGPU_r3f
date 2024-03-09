@@ -157,9 +157,9 @@ export function Particles(){
 
     <EffectComposer>
         <DepthOfField 
-        focusDistance={ .025 }
-        focalLength={ 0.025 }
-        bokehScale={ 3 }
+        focusDistance={ .425 }
+        focalLength={ 0.825 }
+        bokehScale={ 5 }
         />
     </EffectComposer>
 
