@@ -7,11 +7,13 @@ import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRe
 import './RenderMaterial'
 import './SimulationMaterial'
 import { getDataTexture, getSphereTexture, getVelocityTexture } from './getDataTexture.jsx'
+import simFragmentPosition from './shader/simFragmentPosition.js'
+import simFragmentVelocity from './shader/simFragmentVelocity.js'
 
 
 export function Particles(){
 
-    const SIZE = 16
+    const SIZE = 128
 
     const simMat = useRef()
     const renderMat = useRef()
@@ -19,9 +21,9 @@ export function Particles(){
 
     const { gl, viewport } = useThree()
 
-    this.gpuCompute = new GPUComputationRenderer( SIZE, SIZE, gl )
+    const gpuCompute = new GPUComputationRenderer( SIZE, SIZE, gl )
 
-    pointsOnSphere = getSphereTexture)
+    const pointsOnSphere = getSphereTexture(SIZE)
 
     const positionVariable = gpuCompute.addVariable( 'uCurrentPosition', simFragmentPosition, pointsOnSphere )
     
@@ -31,8 +33,8 @@ export function Particles(){
     
     gpuCompute.setVariableDependencies( velocityVariable, [ positionVariable, velocityVariable ] )
 
-    positionUniforms = positionVariable.material.uniforms
-    velocityUniforms = velocityVariable.material.uniforms
+    const positionUniforms = positionVariable.material.uniforms
+    const velocityUniforms = velocityVariable.material.uniforms
 
     positionUniforms.uOriginalPosition = { value: pointsOnSphere}
     velocityUniforms.uMouse = { value: new Vector3(0, 0, 0)}
@@ -66,11 +68,14 @@ export function Particles(){
     useFrame(({mouse}) => {
         followMouseRef.current.position.x = mouse.x * viewport.width / 2
         followMouseRef.current.position.y = mouse.y * viewport.height / 2
-        // simMat.current.uniforms.uMouse.value.x = mouse.x * viewport.width / 2
-        // simMat.current.uniforms.uMouse.value.y = mouse.y * viewport.height / 2
+        velocityUniforms.uMouse.value.x = mouse.x * viewport.width / 2
+        velocityUniforms.uMouse.value.y = mouse.y * viewport.height / 2
     })
 
     useFrame(({gl})=>{
+        gpuCompute.compute()
+
+         renderMat.current.uniforms.uPosition.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture
         // gl.setRenderTarget(target0)
         // gl.render(scene, camera)
         // gl.setRenderTarget(null)
@@ -85,17 +90,7 @@ export function Particles(){
 
     return(
     <>
-    {createPortal(
-        <mesh>
-            <planeGeometry args={[2, 2]} />
-            <simulationMaterial 
-            ref = {simMat}
-            uPosition = {originalPosition}
-            uOriginalPosition = {originalPosition}
-            />
-        </mesh>,
-        scene
-    )}
+
     <mesh
     ref = {followMouseRef}
     >
