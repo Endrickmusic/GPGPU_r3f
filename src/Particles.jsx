@@ -7,6 +7,7 @@ import { useFBO, useTexture } from '@react-three/drei'
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js'
 import CustomShaderMaterial from 'three-custom-shader-material'
 import { patchShaders } from 'gl-noise/build/glNoise.m'
+import { EffectComposer, DepthOfField } from '@react-three/postprocessing'
 
 import './RenderMaterial'
 import './SimulationMaterial'
@@ -56,7 +57,7 @@ const shader = {
 
 export function Particles(){
 
-    const SIZE = 256
+    const SIZE = 512
 
     const [matcap1, matcap2, matcap3, matcap4] = useTexture(['./textures/matcap01.png', './textures/matcap02.jpg', './textures/matcap03.jpg', './textures/matcap07.jpg'])
 
@@ -154,14 +155,22 @@ export function Particles(){
     return(
     <>
 
+    <EffectComposer>
+        <DepthOfField 
+        focusDistance={ .025 }
+        focalLength={ 0.025 }
+        bokehScale={ 3 }
+        />
+    </EffectComposer>
+
     <mesh
     ref = {followMouseRef}
     >
-        <sphereGeometry
-        args={[0.1, 32, 32]}
+        <icosahedronGeometry
+        args={[0.1, 0]}
         />
-        <meshBasicMaterial
-        color={0x5500bb}
+        <meshMatcapMaterial
+        matcap={matcap2}
         />
     </mesh>
 
