@@ -21,17 +21,25 @@ export function Particles(){
 
     const { gl, viewport } = useThree()
 
+        // Creates the gpu computation class and sets it up
+
     const gpuCompute = new GPUComputationRenderer( SIZE, SIZE, gl )
 
     const pointsOnSphere = getSphereTexture(SIZE)
+
+    // Variables 
 
     const positionVariable = gpuCompute.addVariable( 'uCurrentPosition', simFragmentPosition, pointsOnSphere )
     
     const velocityVariable = gpuCompute.addVariable( 'uCurrentVelocity', simFragmentVelocity, getVelocityTexture(SIZE) )
     
+    // Dependencies
+
     gpuCompute.setVariableDependencies( positionVariable, [ positionVariable, velocityVariable ] )
     
     gpuCompute.setVariableDependencies( velocityVariable, [ positionVariable, velocityVariable ] )
+
+    // Uniforms
 
     const positionUniforms = positionVariable.material.uniforms
     const velocityUniforms = velocityVariable.material.uniforms
@@ -40,7 +48,11 @@ export function Particles(){
     velocityUniforms.uMouse = { value: new Vector3(0, 0, 0)}
     velocityUniforms.uOriginalPosition = { value: pointsOnSphere}
 
+    // Initialisation
+
     gpuCompute.init()
+
+    
 
     const particles = new Float32Array(SIZE * SIZE * 3);
     for(let i = 0; i < SIZE; i++){
@@ -62,30 +74,21 @@ export function Particles(){
             ref[ index * 2 + 1 ] = j / (SIZE - 1)
         }
     }
- 
-    const originalPosition = getDataTexture(SIZE)
 
-    useFrame(({mouse}) => {
-        followMouseRef.current.position.x = mouse.x * viewport.width / 2
-        followMouseRef.current.position.y = mouse.y * viewport.height / 2
-        velocityUniforms.uMouse.value.x = mouse.x * viewport.width / 2
-        velocityUniforms.uMouse.value.y = mouse.y * viewport.height / 2
+
+
+    useFrame(({pointer}) => {
+        followMouseRef.current.position.x = pointer.x * viewport.width / 2
+        followMouseRef.current.position.y = pointer.y * viewport.height / 2
+        velocityUniforms.uMouse.value.x = pointer.x * viewport.width / 2
+        velocityUniforms.uMouse.value.y = pointer.y * viewport.height / 2
     })
 
-    useFrame(({gl})=>{
+    useFrame(({})=>{
+
         gpuCompute.compute()
-
-         renderMat.current.uniforms.uPosition.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture
-        // gl.setRenderTarget(target0)
-        // gl.render(scene, camera)
-        // gl.setRenderTarget(null)
-
-        // renderMat.current.uniforms.uPosition.value = target1.texture
-        // simMat.current.uniforms.uPosition.value = target0.texture
-
-        // let temp = target0
-        // target0 = target1
-        // target1 = temp
+        
+        renderMat.current.uniforms.uPosition.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture
     })
 
     return(

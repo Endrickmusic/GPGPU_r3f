@@ -13,7 +13,7 @@ function App() {
 
     <Canvas
     camera={{ 
-      position: [0, 0, 9],
+      position: [0, 0, 3],
       fov: 40 }}  
     >
       <Particles />
