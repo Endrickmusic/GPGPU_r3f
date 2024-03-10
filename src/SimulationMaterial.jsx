@@ -1,16 +1,20 @@
-import { shaderMaterial } from "@react-three/drei";
-import { extend } from "@react-three/fiber";
+import { Vector2 } from 'three'
+import { shaderMaterial } from '@react-three/drei'
+import { extend } from '@react-three/fiber'
 
 
 const SimulationMaterial = shaderMaterial(
     {
-        uPosition: null,
-        uTime: 0
+        uPosition : null,
+        uTime : 0,
+        uMouse : new Vector2
     },
+
     // vertex shader
     `
     varying vec2 vUv;
     varying vec3 vPosition;
+
     void main() {
       vUv = uv;
       vPosition = position.xyz;
@@ -23,6 +27,7 @@ const SimulationMaterial = shaderMaterial(
     uniform sampler2D uPosition;
     uniform sampler2D uVelocity;
     uniform float uTime;
+    uniform vec2 uMouse;
 
     varying vec2 vUv;
     varying vec3 vPosition;
@@ -102,17 +107,27 @@ const SimulationMaterial = shaderMaterial(
                                     dot(p2,x2), dot(p3,x3) ) );
     }
     
+    #define BOUNDS 512.0 
+    #define PI 3.14159265
     
     void main() {
 
         vec3 position = vPosition;
-        vec3 velocity = texture2D(uVelocity, vUv).rgb;
 
         vec3 transformed = texture2D(uPosition, vUv).xyz;
         
         // transformed.y = snoise(transformed + uTime) * 0.1;
         // transformed.y = snoise( transformed + 2.0) * 2.;
-        transformed.y = sin( transformed.x + uTime ) * 12.;
+        // transformed.x += sin( transformed.z * 15. + uTime * 1. ) * 0.02;
+        transformed.x = snoise(position + uTime / 8.) * 0.5;
+
+        // Mouse influence
+        vec2 mousePos = uMouse ;
+
+        float mouseSize = 50.0;
+
+		float mousePhase = clamp( length( ( vUv - vec2( 0.5 ) ) * BOUNDS - vec2( mousePos.x, - mousePos.y ) ) * PI / mouseSize, 0.0, PI );
+		transformed.x += ( cos( mousePhase ) + 1.0) * 0.28;
 
         // gl_FragColor.rgba = vec4(transformed, 1.0);
         gl_FragColor.rgba = vec4( transformed, 1.0 );
