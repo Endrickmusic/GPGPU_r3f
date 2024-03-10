@@ -4,22 +4,26 @@ import { extend } from "@react-three/fiber";
 
 const RenderMaterial = shaderMaterial(
     {
-        time: 0,
+        uPosition: null,
+        uTime: 0
     },
     // vertex shader
     `
-    attribute vec2 ref;
-    varying vec2 vRef;
+    uniform sampler2D uPosition;
+
+    varying vec2 vUv;
     void main() {
-      vRef = ref;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      gl_PointSize = 5.0;
+      vUv = uv;
+      vec3 pos = texture2D(uPosition, vUv).xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
     `,
+
+    // fragment shader
     `
-    varying vec2 vRef;
+    varying vec2 vUv;
     void main() {
-      gl_FragColor.rgba = vec4(vRef,0., 1.0);
+      gl_FragColor.rgba = vec4(vUv,0., 1.0);
     }
     `,
 )
