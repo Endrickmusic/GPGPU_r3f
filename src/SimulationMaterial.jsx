@@ -129,7 +129,6 @@ const SimulationMaterial = shaderMaterial(
 		float mousePhase = clamp( length( ( vUv - vec2( 0.5 ) ) * BOUNDS - vec2( mousePos.x, - mousePos.y ) ) * PI / mouseSize, 0.0, PI );
 		transformed.x += ( cos( mousePhase ) + 1.0) * 0.28;
 
-        // gl_FragColor.rgba = vec4(transformed, 1.0);
         gl_FragColor.rgba = vec4( transformed, 1.0 );
     }
     `,
