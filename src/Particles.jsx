@@ -82,7 +82,7 @@ export function Particles(){
         followMouseRef.current.position.y = pointer.y * viewport.height / 2
         velocityUniforms.uMouse.value.x = pointer.x * viewport.width / 2
         velocityUniforms.uMouse.value.y = pointer.y * viewport.height / 2
-    })
+    },[])
 
     useFrame(({})=>{
 
