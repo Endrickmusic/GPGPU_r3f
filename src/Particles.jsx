@@ -24,7 +24,6 @@ import {
   getVelocityTexture,
 } from "./getDataTexture.jsx"
 import simFragmentPosition from "./shader/simFragmentPosition.js"
-import simFragmentVelocity from "./shader/simFragmentVelocity.js"
 
 const shader = {
   vertex: /* glsl */ `
@@ -58,8 +57,6 @@ export function Particles() {
     "./textures/matcap07.jpg",
   ])
 
-  const renderMat = useRef()
-  const followMouseRef = useRef()
   const iRef = useRef()
 
   const { gl, viewport } = useThree()
@@ -76,22 +73,7 @@ export function Particles() {
 
   gpuCompute.setVariableDependencies(positionVariable, [positionVariable])
 
-  const positionUniforms = positionVariable.material.uniforms
-
-  positionUniforms.uOriginalPosition = { value: pointsOnSphere }
-
   gpuCompute.init()
-
-  const particles = new Float32Array(SIZE * SIZE * 3)
-  for (let i = 0; i < SIZE; i++) {
-    for (let j = 0; j < SIZE; j++) {
-      const index = i * SIZE + j
-
-      particles[index * 3 + 0] = (i / SIZE) * 5.0
-      particles[index * 3 + 1] = (j / SIZE) * 5.0
-      particles[index * 3 + 2] = 0
-    }
-  }
 
   const ref = new Float32Array(SIZE * SIZE * 2)
   for (let i = 0; i < SIZE; i++) {
@@ -103,14 +85,9 @@ export function Particles() {
     }
   }
 
-  const originalPosition = getDataTexture(SIZE)
-
   const uniforms = useMemo(
     () => ({
       uPosition: {
-        value: null,
-      },
-      uVelocity: {
         value: null,
       },
     }),
@@ -133,16 +110,8 @@ export function Particles() {
     )
   }, [])
 
-  useFrame(({ mouse }) => {
-    followMouseRef.current.position.x = (mouse.x * viewport.width) / 2
-    followMouseRef.current.position.y = (mouse.y * viewport.height) / 2
-  })
-
   useFrame(({ gl }) => {
     gpuCompute.compute()
-
-    renderMat.current.uniforms.uPosition.value =
-      gpuCompute.getCurrentRenderTarget(positionVariable).texture
 
     iRef.current.material.uniforms.uPosition.value =
       gpuCompute.getCurrentRenderTarget(positionVariable).texture
@@ -150,34 +119,8 @@ export function Particles() {
 
   return (
     <>
-      <mesh ref={followMouseRef}>
-        <sphereGeometry args={[0.1, 32, 32]} />
-        <meshStandardMaterial color={0x5500bb} />
-      </mesh>
-      <points position={[0, 0, 0]}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={particles.length / 3}
-            array={particles}
-            itemSize={3}
-          />
-          <bufferAttribute
-            attach="attributes-ref"
-            count={ref.length / 3}
-            array={ref}
-            itemSize={2}
-          />
-        </bufferGeometry>
-
-        <renderMaterial
-          ref={renderMat}
-          transparent={true}
-          blending={AdditiveBlending}
-        />
-      </points>
       <instancedMesh ref={iRef} args={[null, null, SIZE * SIZE]}>
-        <boxGeometry args={[0.01, 0.07, 0.01]} />
+        <boxGeometry args={[0.1, 0.7, 0.1]} />
         <CustomShaderMaterial
           baseMaterial={MeshMatcapMaterial}
           size={0.01}
