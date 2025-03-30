@@ -30,37 +30,15 @@ const shader = {
   vertex: /* glsl */ `
       
       attribute vec2 ref;
-
-      uniform float uTime;
+      
       uniform sampler2D uPosition;
-      uniform sampler2D uVelocity;
-
-      vec3 rotate3D(vec3 v, vec3 vel){
-        vec3 newPos = v;
-        vec3 up = vec3(0, 1, 0);
-        vec3 axis = normalize(cross(up, vel));
-        float angle = acos(dot(up, normalize(vel)));
-        newPos = newPos * cos (angle) + cross(axis, newPos) * sin(angle) + axis * dot(axis, newPos) * (1. - cos(angle));
-        return newPos;
-    }
-
-      vec3 displace(vec3 point, vec3 vel) {
-        vec3 pos = texture2D(uPosition, ref).rgb;
-        vec3 copyPoint = rotate3D(point, vel);
-        vec3 instancePosition = (instanceMatrix * vec4(copyPoint, 1.)).xyz;
-        return instancePosition + pos;
-      }  
   
       void main() {
-        vec3 vel = texture2D(uVelocity, ref).rgb;
-
-        // vec3 p = displace(position, vel);
         vec3 pos = texture2D(uPosition, ref).rgb;
         vec3 instancePosition = (instanceMatrix * vec4(position, 1.)).xyz;
         vec3 p = instancePosition + pos;
         // csm_PositionRaw = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.);
         csm_PositionRaw = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.);
-        csm_Normal = rotate3D( normal, vel );
       }
       `,
   fragment: /* glsl */ `
@@ -80,7 +58,6 @@ export function Particles() {
     "./textures/matcap07.jpg",
   ])
 
-  const simMat = useRef()
   const renderMat = useRef()
   const followMouseRef = useRef()
   const iRef = useRef()
@@ -97,28 +74,11 @@ export function Particles() {
     pointsOnSphere
   )
 
-  const velocityVariable = gpuCompute.addVariable(
-    "uCurrentVelocity",
-    simFragmentVelocity,
-    getVelocityTexture(SIZE)
-  )
-
-  gpuCompute.setVariableDependencies(positionVariable, [
-    positionVariable,
-    velocityVariable,
-  ])
-
-  gpuCompute.setVariableDependencies(velocityVariable, [
-    positionVariable,
-    velocityVariable,
-  ])
+  gpuCompute.setVariableDependencies(positionVariable, [positionVariable])
 
   const positionUniforms = positionVariable.material.uniforms
-  const velocityUniforms = velocityVariable.material.uniforms
 
   positionUniforms.uOriginalPosition = { value: pointsOnSphere }
-  velocityUniforms.uMouse = { value: new Vector3(0, 0, 0) }
-  velocityUniforms.uOriginalPosition = { value: pointsOnSphere }
 
   gpuCompute.init()
 
@@ -176,8 +136,6 @@ export function Particles() {
   useFrame(({ mouse }) => {
     followMouseRef.current.position.x = (mouse.x * viewport.width) / 2
     followMouseRef.current.position.y = (mouse.y * viewport.height) / 2
-    velocityUniforms.uMouse.value.x = (mouse.x * viewport.width) / 2
-    velocityUniforms.uMouse.value.y = (mouse.y * viewport.height) / 2
   })
 
   useFrame(({ gl }) => {
@@ -188,9 +146,6 @@ export function Particles() {
 
     iRef.current.material.uniforms.uPosition.value =
       gpuCompute.getCurrentRenderTarget(positionVariable).texture
-
-    iRef.current.material.uniforms.uVelocity.value =
-      gpuCompute.getCurrentRenderTarget(velocityVariable).texture
   })
 
   return (
