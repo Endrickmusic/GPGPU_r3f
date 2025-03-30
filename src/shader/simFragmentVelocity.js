@@ -159,7 +159,6 @@ vec3 position = texture2D(uCurrentPosition, vUv ).xyz;
 vec3 original = texture2D(uOriginalPosition, vUv ).xyz;
 vec3 velocity = texture2D(uCurrentVelocity, vUv ).xyz;
 
-
 // // vec2 velocity = texture2D( uCurrentPosition, vUv ).zw;
 
 // vec3 finalOriginal = original;
