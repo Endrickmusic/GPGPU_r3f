@@ -113,7 +113,6 @@ export function Particles() {
         <sphereGeometry args={[0.3, 64, 64]} />
         <CustomShaderMaterial
           baseMaterial={MeshMatcapMaterial}
-          size={0.01}
           vertexShader={patchShaders(shader.vertex)}
           fragmentShader={patchShaders(shader.fragment)}
           uniforms={uniforms}
