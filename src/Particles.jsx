@@ -36,7 +36,6 @@ const shader = {
         vec3 pos = texture2D(uPosition, ref).rgb;
         vec3 instancePosition = (instanceMatrix * vec4(position, 1.)).xyz;
         vec3 p = instancePosition + pos;
-        // csm_PositionRaw = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.);
         csm_PositionRaw = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.);
       }
       `,
@@ -75,16 +74,6 @@ export function Particles() {
 
   gpuCompute.init()
 
-  const ref = new Float32Array(SIZE * SIZE * 2)
-  for (let i = 0; i < SIZE; i++) {
-    for (let j = 0; j < SIZE; j++) {
-      const index = i * SIZE + j
-
-      ref[index * 2 + 0] = i / (SIZE - 1)
-      ref[index * 2 + 1] = j / (SIZE - 1)
-    }
-  }
-
   const uniforms = useMemo(
     () => ({
       uPosition: {
@@ -120,7 +109,8 @@ export function Particles() {
   return (
     <>
       <instancedMesh ref={iRef} args={[null, null, SIZE * SIZE]}>
-        <boxGeometry args={[0.1, 0.7, 0.1]} />
+        {/* <boxGeometry args={[0.1, 0.7, 0.1]} /> */}
+        <sphereGeometry args={[0.3, 64, 64]} />
         <CustomShaderMaterial
           baseMaterial={MeshMatcapMaterial}
           size={0.01}
